@@ -7,8 +7,8 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:3000',
-      'https://andisor-assessment.vercel.app',
-      /^https:\/\/andisor-assessment-.*-rakeshnatras-projects\.vercel\.app$/,
+      'https://andisor-assessment-ieyd.vercel.app',
+      /^https:\/\/andisor-assessment-ieyd.*\.vercel\.app$/,
     ],
   });
 
