@@ -143,7 +143,7 @@ export class ProductsService {
         category: data.category,
         image: data.image,
             primaryVariantName: data.primaryVariantName,
-            secondaryVariantName: data.secondaryVariantName,
+    secondaryVariantName: data.secondaryVariantName,
 
     
 
@@ -186,7 +186,13 @@ export class ProductsService {
       data: productData,
     });
   }
-
+async remove(id: number) {
+  return this.prisma.product.delete({
+    where: {
+      id,
+    },
+  });
+}
   /**
    * Parses an uploaded JSON file of products and pushes each one onto the
    * "products" BullMQ queue. This method only does structural validation

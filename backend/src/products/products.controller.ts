@@ -43,6 +43,7 @@ import {
   UseInterceptors,
   UsePipes,
   ValidationPipe,
+  Delete,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -71,7 +72,10 @@ export class ProductsController {
   updateProduct(@Param('id') id: string, @Body() data: Partial<CreateProductDto>) {
     return this.productsService.update(Number(id), data);
   }
-
+@Delete(':id')
+remove(@Param('id') id: string) {
+  return this.productsService.remove(Number(id));
+}
   /**
    * Bulk product upload.
    * Accepts a single JSON file (multipart/form-data, field name "file")

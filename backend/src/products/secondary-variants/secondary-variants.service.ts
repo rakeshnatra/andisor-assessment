@@ -23,4 +23,11 @@ export class SecondaryVariantsService {
       throw error;
     }
   }
+  async remove(id: number) {
+  return this.prisma.secondaryVariant.delete({
+    where: {
+      id,
+    },
+  });
+}
 }

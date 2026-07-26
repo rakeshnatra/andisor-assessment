@@ -5,6 +5,7 @@ import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/createProductDto.dto';
+import {keysToCamel} from './common/snake-to-camel'
 
 @Processor('products')
 export class ProductsProcessor extends WorkerHost {
@@ -18,10 +19,11 @@ export class ProductsProcessor extends WorkerHost {
     this.logger.log('ProductsProcessor initialized — worker is ready to consume jobs');
   }
 
-  async process(job: Job<{ product: unknown; sourceIndex: number }>): Promise<unknown> {
-    const { product, sourceIndex } = job.data;
-
-    const dto = plainToInstance(CreateProductDto, product);
+async process(job: Job<{ product: unknown; sourceIndex: number }>): Promise<unknown> {
+  const { product, sourceIndex } = job.data;
+ const normalized = keysToCamel(product); // <-- convert snake_case -> camelCase first
+  const dto = plainToInstance(CreateProductDto, normalized);
+    // const dto = plainToInstance(CreateProductDto, product);
 
     // TEMPORARY — remove once the validation issue is diagnosed.
     this.logger.debug(`raw product: ${JSON.stringify(product)}`);

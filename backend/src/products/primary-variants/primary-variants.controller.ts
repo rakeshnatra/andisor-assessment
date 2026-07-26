@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Patch, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Delete,Controller, Param, Patch, UsePipes, ValidationPipe } from '@nestjs/common';
 import { PrimaryVariantsService } from './primary-variants.service';
 import { UpdatePrimaryVariantDto } from './dto/updatePrimaryVariantDto';
 
@@ -15,4 +15,10 @@ export class PrimaryVariantsController {
     // same pattern ProductsController.updateProduct already uses.
     return this.primaryVariantsService.update(Number(id), data);
   }
+  @Delete(':id')
+remove(@Param('id') id: string) {
+  return this.primaryVariantsService.remove(
+    Number(id)
+  );
+}
 }

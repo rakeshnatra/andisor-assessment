@@ -127,6 +127,7 @@ export class CreateProductDto {
   @Max(100)
   discountPercentage!: number;
 
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   inventory!: number;

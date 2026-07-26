@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Patch, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body,Delete, Controller, Param, Patch, UsePipes, ValidationPipe } from '@nestjs/common';
 import { SecondaryVariantsService } from './secondary-variants.service';
 import { UpdateSecondaryVariantDto } from './dto/UpdateSecondaryVariantDto.dto';
 
@@ -13,4 +13,10 @@ export class SecondaryVariantsController {
   update(@Param('id') id: string, @Body() data: UpdateSecondaryVariantDto) {
     return this.secondaryVariantsService.update(Number(id), data);
   }
+  @Delete(':id')
+remove(@Param('id') id: string) {
+  return this.secondaryVariantsService.remove(
+    Number(id)
+  );
+}
 }

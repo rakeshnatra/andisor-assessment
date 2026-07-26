@@ -35,4 +35,11 @@ export class PrimaryVariantsService {
       throw error;
     }
   }
+  async remove(id: number) {
+  return this.prisma.primaryVariant.delete({
+    where: {
+      id,
+    },
+  });
+}
 }
