@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+   moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Product {
+  id                   Int              @id @default(autoincrement())
+  title                String
+  price                Decimal          @db.Decimal(10, 2)
+  discountPercentage   Float
+  inventory            Int
+  active               Boolean
+  leadTime             String
+  description          String
+  category             String
+  image                String
+  primaryVariantName   String
+  secondaryVariantName String
+
+  primaryVariants PrimaryVariant[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("products")
+}
+
+model PrimaryVariant {
+  id                 Int                @id @default(autoincrement())
+  name               String
+  price              Decimal            @db.Decimal(10, 2)
+  discountPercentage Float
+  inventory          Int
+  active             Boolean
+
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  secondaryVariants SecondaryVariant[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("primary_variants")
+}
+
+model SecondaryVariant {
+  id                 Int            @id @default(autoincrement())
+  name               String
+  price              Decimal        @db.Decimal(10, 2)
+  discountPercentage Float
+  inventory          Int
+
+  primaryVariantId Int
+  primaryVariant   PrimaryVariant @relation(fields: [primaryVariantId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("secondary_variants")
+}
