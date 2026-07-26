@@ -65,6 +65,8 @@ interface Product {
 }
 
 export default function ProductTable() {
+  const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
   // ----- Top-level product list state -----
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,8 +119,7 @@ export default function ProductTable() {
   async function fetchProducts() {
     try {
       setLoading(true);
-
-      const response = await fetch("http://localhost:3001/products");
+      const response = await fetch(`${API_URL}/products`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch products. Status: ${response.status}`);
@@ -145,7 +146,7 @@ export default function ProductTable() {
     try {
       setCreating(true);
 
-      const response = await fetch("http://localhost:3001/products", {
+      const response = await fetch(`${API_URL}/products`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -200,9 +201,9 @@ export default function ProductTable() {
 
       const isEditing = editingProduct !== null;
 
-      const url = isEditing
-        ? `http://localhost:3001/products/${editingProduct.id}`
-        : "http://localhost:3001/products";
+    const url = isEditing
+  ? `${API_URL}/products/${editingProduct.id}`
+  : `${API_URL}/products`;
 
       const method = isEditing ? "PATCH" : "POST";
 
@@ -381,7 +382,7 @@ export default function ProductTable() {
     try {
       setBulkUploading(true);
 
-      const response = await fetch("http://localhost:3001/products/bulk-upload", {
+      const response = await fetch(  `${API_URL}/products/bulk-upload`, {
         method: "POST",
         body: formData, // no Content-Type header — the browser sets the
         // correct multipart/form-data boundary automatically; setting it
