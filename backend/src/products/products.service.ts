@@ -142,8 +142,9 @@ export class ProductsService {
         description: data.description,
         category: data.category,
         image: data.image,
-    secondaryVariantName: data.secondaryVariantName,
-    primaryVariantName: data.primaryVariantName,
+            primaryVariantName: data.primaryVariantName,
+            secondaryVariantName: data.secondaryVariantName,
+
     
 
         primaryVariants: {
