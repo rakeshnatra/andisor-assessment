@@ -30,7 +30,7 @@ import type { TableColumnsType } from "antd";
  */
 
 interface SecondaryVariant {
-  id: number;
+  id?: number;
   name: string;
   price: string | number; // API can return price as a string (e.g. decimal from DB), hence the union type
   discountPercentage: number;
@@ -38,7 +38,7 @@ interface SecondaryVariant {
 }
 
 interface PrimaryVariant {
-  id: number;
+  id?: number;
   name: string;
   price: string | number;
   discountPercentage: number;
@@ -102,6 +102,10 @@ export default function ProductTable() {
 
   const [savingPrimary, setSavingPrimary] = useState(false);
   const [savingSecondary, setSavingSecondary] = useState(false);
+// ----- Deleting -----
+  const [deletingProduct, setDeletingProduct] = useState(false);
+const [deletingPrimary, setDeletingPrimary] = useState(false);
+const [deletingSecondary, setDeletingSecondary] = useState(false);
 
   // ----- Bulk JSON upload state -----
   const [bulkUploading, setBulkUploading] = useState(false);
@@ -168,29 +172,214 @@ export default function ProductTable() {
       setCreating(false);
     }
   }
+  // delete product handler, shows a confirmation modal first. If confirmed, sends DELETE to API.
+  async function handleDeleteProduct() {
+  if (!editingProduct) return;
+
+  Modal.confirm({
+    title: "Delete Product?",
+    content:
+      "This will permanently delete the product and all of its primary and secondary variants.",
+    okText: "Delete",
+    cancelText: "Cancel",
+    okButtonProps: {
+      danger: true,
+    },
+
+    async onOk() {
+      try {
+        setDeletingProduct(true);
+
+        const response = await fetch(
+          `${API_URL}/products/${editingProduct.id}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+        if (!response.ok) {
+          const errorBody = await response.text();
+          console.error("Delete product error:", errorBody);
+
+          throw new Error("Failed to delete product");
+        }
+
+        message.success("Product deleted successfully");
+
+        form.resetFields();
+        setEditingProduct(null);
+        setCreateModalOpen(false);
+
+        await fetchProducts();
+      } catch (error) {
+        console.error(error);
+        message.error("Unable to delete product");
+      } finally {
+        setDeletingProduct(false);
+      }
+    },
+  });
+}
+async function handleDeletePrimaryVariant() {
+  if (!editingPrimaryVariant) return;
+
+  Modal.confirm({
+    title: "Delete Primary Variant?",
+    content:
+      "This will also permanently delete all secondary variants belonging to this variant.",
+    okText: "Delete",
+    cancelText: "Cancel",
+    okButtonProps: {
+      danger: true,
+    },
+
+    async onOk() {
+      try {
+        setDeletingPrimary(true);
+
+        const response = await fetch(
+          `${API_URL}/primary-variants/${editingPrimaryVariant.id}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+        if (!response.ok) {
+          const errorBody = await response.text();
+
+          console.error(
+            "Delete primary variant error:",
+            errorBody
+          );
+
+          throw new Error(
+            "Failed to delete primary variant"
+          );
+        }
+
+        message.success(
+          "Primary variant deleted successfully"
+        );
+
+        primaryForm.resetFields();
+        setEditingPrimaryVariant(null);
+        setPrimaryModalOpen(false);
+
+        await fetchProducts();
+      } catch (error) {
+        console.error(error);
+
+        message.error(
+          "Unable to delete primary variant"
+        );
+      } finally {
+        setDeletingPrimary(false);
+      }
+    },
+  });
+}
+async function handleDeleteSecondaryVariant() {
+  if (!editingSecondaryVariant) return;
+
+  Modal.confirm({
+    title: "Delete Secondary Variant?",
+    content:
+      "Are you sure you want to permanently delete this secondary variant?",
+    okText: "Delete",
+    cancelText: "Cancel",
+    okButtonProps: {
+      danger: true,
+    },
+
+    async onOk() {
+      try {
+        setDeletingSecondary(true);
+
+        const response = await fetch(
+          `${API_URL}/secondary-variants/${editingSecondaryVariant.id}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+        if (!response.ok) {
+          const errorBody = await response.text();
+
+          console.error(
+            "Delete secondary variant error:",
+            errorBody
+          );
+
+          throw new Error(
+            "Failed to delete secondary variant"
+          );
+        }
+
+        message.success(
+          "Secondary variant deleted successfully"
+        );
+
+        secondaryForm.resetFields();
+        setEditingSecondaryVariant(null);
+        setSecondaryModalOpen(false);
+
+        await fetchProducts();
+      } catch (error) {
+        console.error(error);
+
+        message.error(
+          "Unable to delete secondary variant"
+        );
+      } finally {
+        setDeletingSecondary(false);
+      }
+    },
+  });
+}
 
   // Pre-fills the shared Create/Edit modal form with the selected product's current
   // values, then opens the modal. Numeric fields are explicitly cast with Number()
   // because `price` can come back from the API as a string.
-  function handleEditProduct(product: Product) {
-    setEditingProduct(product);
+function handleEditProduct(product: Product) {
+  setEditingProduct(product);
 
-    form.setFieldsValue({
-      title: product.title,
-      price: Number(product.price),
-      discountPercentage: product.discountPercentage,
-      inventory: product.inventory,
-      active: product.active,
-      leadTime: product.leadTime,
-      description: product.description,
-      category: product.category,
-      image: product.image,
-      primaryVariantName: product.primaryVariantName,
-      secondaryVariantName: product.secondaryVariantName,
-    });
+  form.setFieldsValue({
+    title: product.title,
+    price: Number(product.price),
+    discountPercentage: product.discountPercentage,
+    inventory: product.inventory,
+    active: product.active,
+    leadTime: product.leadTime,
+    description: product.description,
+    category: product.category,
+    image: product.image,
 
-    setCreateModalOpen(true);
-  }
+    primaryVariantName: product.primaryVariantName,
+    secondaryVariantName: product.secondaryVariantName,
+
+  //   primaryVariants: (product.primaryVariants ?? []).map((primary) => ({
+  //     id: primary.id,
+  //     name: primary.name,
+  //     price: Number(primary.price),
+  //     discountPercentage: primary.discountPercentage,
+  //     inventory: primary.inventory,
+  //     active: primary.active,
+
+  //     secondaryVariants: (primary.secondaryVariants ?? []).map(
+  //       (secondary) => ({
+  //         id: secondary.id,
+  //         name: secondary.name,
+  //         price: Number(secondary.price),
+  //         discountPercentage: secondary.discountPercentage,
+  //         inventory: secondary.inventory,
+  //       })
+  //     ),
+  //   }
+  // )),
+  });
+
+  setCreateModalOpen(true);
+}
 
   // Single submit handler for the product modal, branching on whether we're editing
   // (PATCH to /products/:id) or creating (POST to /products). Keeping one handler
@@ -753,18 +942,54 @@ export default function ProductTable() {
         Title, submit label, and create-vs-update behavior are all derived from
         `editingProduct` being null (create) or set (edit) — see handleSubmitProduct.
       */}
-      <Modal
-        title={editingProduct ? "Edit Product" : "Create Product"}
-        open={createModalOpen}
-        onCancel={() => {
-          setCreateModalOpen(false);
-          setEditingProduct(null);
-          form.resetFields();
-        }}
-        onOk={() => form.submit()}
-        confirmLoading={creating}
-        okText={editingProduct ? "Save Changes" : "Create Product"}
-      >
+          <Modal
+            title={editingProduct ? "Edit Product" : "Create Product"}
+            open={createModalOpen}
+            onCancel={() => {
+              setCreateModalOpen(false);
+              setEditingProduct(null);
+              form.resetFields();
+            }}
+            footer={
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: editingProduct ? "space-between" : "flex-end",
+                  alignItems: "center",
+                }}
+              >
+                {editingProduct && (
+                  <Button
+                    danger
+                    loading={deletingProduct}
+                    onClick={handleDeleteProduct}
+                  >
+                    Delete Product
+                  </Button>
+                )}
+
+                <Space>
+                  <Button
+                    onClick={() => {
+                      setCreateModalOpen(false);
+                      setEditingProduct(null);
+                      form.resetFields();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+
+                  <Button
+                    type="primary"
+                    loading={creating}
+                    onClick={() => form.submit()}
+                  >
+                    {editingProduct ? "Save Changes" : "Create Product"}
+                  </Button>
+                </Space>
+              </div>
+            }
+          >
         <Form
           form={form}
           layout="vertical"
@@ -846,6 +1071,335 @@ export default function ProductTable() {
           <Form.Item label="Secondary Variant Name" name="secondaryVariantName">
             <Input />
           </Form.Item>
+          {/* <Form.Item
+  label="Primary Variant Name"
+  name="primaryVariantName"
+>
+  <Input placeholder="e.g. Color" />
+</Form.Item>
+
+<Form.Item
+  label="Secondary Variant Name"
+  name="secondaryVariantName"
+>
+  <Input placeholder="e.g. Size" />
+</Form.Item> */}
+
+<Form.Item label="Variants">
+  <Form.List name="primaryVariants">
+    {(primaryFields, { add: addPrimary, remove: removePrimary }) => (
+      <Space
+        orientation="vertical"
+        size="middle"
+        style={{ width: "100%" }}
+      >
+        {primaryFields.map((primaryField, primaryIndex) => (
+          <div
+            key={primaryField.key}
+            style={{
+              border: "1px solid #e5e7eb",
+              borderRadius: 8,
+              padding: 16,
+            }}
+          >
+            {/* Keep database ID when editing */}
+            <Form.Item
+              name={[primaryField.name, "id"]}
+              hidden
+            >
+              <Input />
+            </Form.Item>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 12,
+              }}
+            >
+              <strong>
+                Primary Variant {primaryIndex + 1}
+              </strong>
+
+              <Button
+                danger
+                type="link"
+                onClick={() => removePrimary(primaryField.name)}
+              >
+                Remove
+              </Button>
+            </div>
+
+            <Form.Item
+              label="Variant Name"
+              name={[primaryField.name, "name"]}
+              rules={[
+                {
+                  required: true,
+                  message: "Please enter variant name",
+                },
+              ]}
+            >
+              <Input placeholder="e.g. Red" />
+            </Form.Item>
+
+            <Form.Item
+              label="Price"
+              name={[primaryField.name, "price"]}
+              rules={[
+                {
+                  required: true,
+                  message: "Please enter variant price",
+                },
+              ]}
+            >
+              <InputNumber
+                min={0}
+                precision={2}
+                style={{ width: "100%" }}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="Discount Percentage"
+              name={[
+                primaryField.name,
+                "discountPercentage",
+              ]}
+            >
+              <InputNumber
+                min={0}
+                max={100}
+                style={{ width: "100%" }}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="Inventory"
+              name={[primaryField.name, "inventory"]}
+              rules={[
+                {
+                  required: true,
+                  message: "Please enter inventory",
+                },
+              ]}
+            >
+              <InputNumber
+                min={0}
+                style={{ width: "100%" }}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="Active"
+              name={[primaryField.name, "active"]}
+              valuePropName="checked"
+            >
+              <Switch />
+            </Form.Item>
+
+            {/* SECONDARY VARIANTS */}
+            <div
+              style={{
+                marginTop: 16,
+                paddingLeft: 16,
+                borderLeft: "3px solid #eee",
+              }}
+            >
+              <strong>Secondary Variants</strong>
+
+              <Form.List
+                name={[
+                  primaryField.name,
+                  "secondaryVariants",
+                ]}
+              >
+                {(
+                  secondaryFields,
+                  {
+                    add: addSecondary,
+                    remove: removeSecondary,
+                  }
+                ) => (
+                  <Space
+                    orientation="vertical"
+                    size="middle"
+                    style={{
+                      width: "100%",
+                      marginTop: 12,
+                    }}
+                  >
+                    {secondaryFields.map(
+                      (secondaryField, secondaryIndex) => (
+                        <div
+                          key={secondaryField.key}
+                          style={{
+                            background: "#fafafa",
+                            border: "1px solid #eee",
+                            borderRadius: 6,
+                            padding: 12,
+                          }}
+                        >
+                          {/* Database ID for editing */}
+                          <Form.Item
+                            name={[
+                              secondaryField.name,
+                              "id",
+                            ]}
+                            hidden
+                          >
+                            <Input />
+                          </Form.Item>
+
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent:
+                                "space-between",
+                              alignItems: "center",
+                            }}
+                          >
+                            <span>
+                              Secondary Variant{" "}
+                              {secondaryIndex + 1}
+                            </span>
+
+                            <Button
+                              danger
+                              type="link"
+                              onClick={() =>
+                                removeSecondary(
+                                  secondaryField.name
+                                )
+                              }
+                            >
+                              Remove
+                            </Button>
+                          </div>
+
+                          <Form.Item
+                            label="Variant Name"
+                            name={[
+                              secondaryField.name,
+                              "name",
+                            ]}
+                            rules={[
+                              {
+                                required: true,
+                                message:
+                                  "Please enter secondary variant name",
+                              },
+                            ]}
+                          >
+                            <Input placeholder="e.g. Small" />
+                          </Form.Item>
+
+                          <Form.Item
+                            label="Price"
+                            name={[
+                              secondaryField.name,
+                              "price",
+                            ]}
+                            rules={[
+                              {
+                                required: true,
+                                message:
+                                  "Please enter price",
+                              },
+                            ]}
+                          >
+                            <InputNumber
+                              min={0}
+                              precision={2}
+                              style={{
+                                width: "100%",
+                              }}
+                            />
+                          </Form.Item>
+
+                          <Form.Item
+                            label="Discount Percentage"
+                            name={[
+                              secondaryField.name,
+                              "discountPercentage",
+                            ]}
+                          >
+                            <InputNumber
+                              min={0}
+                              max={100}
+                              style={{
+                                width: "100%",
+                              }}
+                            />
+                          </Form.Item>
+
+                          <Form.Item
+                            label="Inventory"
+                            name={[
+                              secondaryField.name,
+                              "inventory",
+                            ]}
+                            rules={[
+                              {
+                                required: true,
+                                message:
+                                  "Please enter inventory",
+                              },
+                            ]}
+                          >
+                            <InputNumber
+                              min={0}
+                              style={{
+                                width: "100%",
+                              }}
+                            />
+                          </Form.Item>
+                        </div>
+                      )
+                    )}
+
+                    <Button
+                      type="dashed"
+                      block
+                      onClick={() =>
+                        addSecondary({
+                          name: "",
+                          price: 0,
+                          discountPercentage: 0,
+                          inventory: 0,
+                        })
+                      }
+                    >
+                      + Add Secondary Variant
+                    </Button>
+                  </Space>
+                )}
+              </Form.List>
+            </div>
+          </div>
+        ))}
+
+        <Button
+          type="dashed"
+          block
+          onClick={() =>
+            addPrimary({
+              name: "",
+              price: 0,
+              discountPercentage: 0,
+              inventory: 0,
+              active: true,
+              secondaryVariants: [],
+            })
+          }
+        >
+          + Add Primary Variant
+        </Button>
+      </Space>
+    )}
+  </Form.List>
+</Form.Item>
 
           <Form.Item label="Active" name="active" valuePropName="checked">
             <Switch />
@@ -855,17 +1409,51 @@ export default function ProductTable() {
 
       {/* Edit Primary Variant modal — update only, no create/delete from this view. */}
       <Modal
-        title="Edit Primary Variant"
-        open={primaryModalOpen}
-        onCancel={() => {
-          setPrimaryModalOpen(false);
-          setEditingPrimaryVariant(null);
-          primaryForm.resetFields();
-        }}
-        onOk={() => primaryForm.submit()}
-        confirmLoading={savingPrimary}
-        okText="Save Changes"
+  title="Edit Primary Variant"
+  open={primaryModalOpen}
+  onCancel={() => {
+    setPrimaryModalOpen(false);
+    setEditingPrimaryVariant(null);
+    primaryForm.resetFields();
+  }}
+  footer={
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+      }}
+    >
+      <Button
+        danger
+        loading={deletingPrimary}
+        onClick={handleDeletePrimaryVariant}
       >
+        Delete Variant
+      </Button>
+
+      <Space>
+        <Button
+          onClick={() => {
+            setPrimaryModalOpen(false);
+            setEditingPrimaryVariant(null);
+            primaryForm.resetFields();
+          }}
+        >
+          Cancel
+        </Button>
+
+        <Button
+          type="primary"
+          loading={savingPrimary}
+          onClick={() => primaryForm.submit()}
+        >
+          Save Changes
+        </Button>
+      </Space>
+    </div>
+  }
+>
         <Form form={primaryForm} layout="vertical" onFinish={handleSavePrimaryVariant}>
           <Form.Item
             label="Variant Name"
@@ -904,17 +1492,51 @@ export default function ProductTable() {
       {/* Edit Secondary Variant modal — no "Active" toggle since SecondaryVariant
           has no `active` field in the data model. */}
       <Modal
-        title="Edit Secondary Variant"
-        open={secondaryModalOpen}
-        onCancel={() => {
-          setSecondaryModalOpen(false);
-          setEditingSecondaryVariant(null);
-          secondaryForm.resetFields();
-        }}
-        onOk={() => secondaryForm.submit()}
-        confirmLoading={savingSecondary}
-        okText="Save Changes"
+  title="Edit Secondary Variant"
+  open={secondaryModalOpen}
+  onCancel={() => {
+    setSecondaryModalOpen(false);
+    setEditingSecondaryVariant(null);
+    secondaryForm.resetFields();
+  }}
+  footer={
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+      }}
+    >
+      <Button
+        danger
+        loading={deletingSecondary}
+        onClick={handleDeleteSecondaryVariant}
       >
+        Delete Variant
+      </Button>
+
+      <Space>
+        <Button
+          onClick={() => {
+            setSecondaryModalOpen(false);
+            setEditingSecondaryVariant(null);
+            secondaryForm.resetFields();
+          }}
+        >
+          Cancel
+        </Button>
+
+        <Button
+          type="primary"
+          loading={savingSecondary}
+          onClick={() => secondaryForm.submit()}
+        >
+          Save Changes
+        </Button>
+      </Space>
+    </div>
+  }
+>
         <Form form={secondaryForm} layout="vertical" onFinish={handleSaveSecondaryVariant}>
           <Form.Item
             label="Variant Name"
